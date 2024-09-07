@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feed de Postagens</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Estilos da Página */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        #navbar {
+            background-color: #000;
+            color: #fff;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #navbar .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        #navbar .menu-icons i {
+            margin: 0 10px;
+            cursor: pointer;
+        }
+
+        #feed {
+            padding: 20px;
+        }
+
+        .post {
+            background-color: #fff;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.3s ease;
+            position: relative;
+        }
+
+        .post:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .post-content {
+            margin-bottom: 10px;
+        }
+
+        .post-image {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .actions i {
+            margin-right: 15px;
+            cursor: pointer;
+            color: #333;
+            transition: color 0.3s ease;
+        }
+
+        .actions i:hover {
+            color: #007bff;
+        }
+
+        .delete-button {
+            color: #ff0000;
+        }
+
+        .delete-button:hover {
+            color: #ff6666;
+        }
+
+        #post-box {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            display: none;
+            z-index: 1001;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        #post-box.show {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #post-box.hide {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        #post-box textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            resize: none;
+        }
+
+        #post-box .icon-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        #post-box input[type="file"] {
+            display: none;
+        }
+
+        #preview-image {
+            max-width: 100%;
+            margin-top: 10px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        #post-button {
+            width: 100%;
+            padding: 10px;
+            background-color: #000;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        #post-button:hover {
+            background-color: #333;
+        }
+
+        #new-post-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #000;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            transition: background-color 0.3s ease;
+        }
+
+        #new-post-button:hover {
+            background-color: #333;
+        }
+
+        .countdown {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 14px;
+            color: #ff0000;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <div id="navbar">
+        <div class="logo">FreeFlow</div>
+        <div class="menu-icons">
+            <i class="fas fa-home" aria-label="Página inicial"></i>
+            <i class="fas fa-user-friends" aria-label="Amigos"></i>
+            <i class="fas fa-bell" aria-label="Notificações"></i>
+            <i class="fas fa-cog" aria-label="Configurações"></i>
+        </div>
+    </div>
+
+    <!-- Feed -->
+    <div id="feed">
+        <!-- As postagens serão adicionadas aqui -->
+    </div>
+
+    <!-- Caixa de Nova Postagem -->
+    <div id="post-box">
+        <textarea id="post-content" placeholder="O que você está pensando?" aria-label="Conteúdo da postagem"></textarea>
+        <div class="icon-container">
+            <label for="image-upload" aria-label="Adicionar imagem">
+                <i class="fas fa-camera"></i>
+            </label>
+            <input type="file" id="image-upload" accept="image/*">
+        </div>
+        <img id="preview-image" alt="Pré-visualização da Imagem">
+        <button id="post-button">Publicar</button>
+    </div>
+
+    <!-- Botão Flutuante de Nova Postagem -->
+    <button id="new-post-button" aria-label="Nova postagem">+</button>
+
+    <script>
+        // IndexedDB setup
+        const request = indexedDB.open('PostDatabase', 1);
+        let db;
+
+        request.onerror = function (event) {
+            console.error('Erro ao abrir o IndexedDB', event);
+        };
+
+        request.onsuccess = function (event) {
+            db = event.target.result;
+            loadPosts(); // Carrega as postagens ao iniciar a página
+        };
+
+        request.onupgradeneeded = function (event) {
+            db = event.target.result;
+            if (!db.objectStoreNames.contains('posts')) {
+                const objectStore = db.createObjectStore('posts', { keyPath: 'id', autoIncrement: true });
+                objectStore.createIndex('content', 'content', { unique: false });
+                objectStore.createIndex('image', 'image', { unique: false });
+                objectStore.createIndex('timestamp', 'timestamp', { unique: false }); // Adicionando um índice para timestamp
+            }
+        };
+
+        // Função para adicionar uma postagem
+        function addPost(content, image) {
+            const transaction = db.transaction(['posts'], 'readwrite');
+            const objectStore = transaction.objectStore('posts');
+            const timestamp = Date.now(); // Timestamp para contagem regressiva
+            const request = objectStore.add({ content, image, timestamp });
+
+            request.onsuccess = function () {
+                console.log('Postagem adicionada com sucesso!');
+                loadPosts(); // Recarrega as postagens após adicionar uma nova
+            };
+
+            request.onerror = function (event) {
+                console.error('Erro ao adicionar a postagem', event);
+            };
+        }
+
+        // Função para carregar as postagens do IndexedDB
+        function loadPosts() {
+            const transaction = db.transaction(['posts'], 'readonly');
+            const objectStore = transaction.objectStore('posts');
+            const request = objectStore.getAll();
+
+            request.onsuccess = function (event) {
+                const posts = event.target.result;
+                const feed = document.getElementById('feed');
+                feed.innerHTML = ''; // Limpa o feed antes de carregar novamente
+
+                posts.forEach(post => {
+                    const postElement = document.createElement('div');
+                    postElement.classList.add('post');
+
+                    let postContent = '';
+                    if (post.image) {
+                        postContent += `<img src="${post.image}" alt="Post Image" class="post-image">`;
+                    }
+                    postContent += `<div class="post-content">${post.content}</div>`;
+
+                    postElement.innerHTML = `
+                        ${postContent}
+                        <div class="actions">
+                            <i class="fas fa-thumbs-up applause-button" aria-label="Aplaudir"></i>
+                            <i class="fas fa-comment comment-button" aria-label="Comentar"></i>
+                            <i class="fas fa-arrow-up move-top-button" aria-label="Mover para o topo"></i>
+                            <i class="fas fa-trash delete-button" aria-label="Deletar"></i>
+                        </div>
+                        <div class="countdown" aria-label="Tempo restante"></div>
+                    `;
+
+                    // Função para mover o post para o topo
+                    postElement.querySelector('.move-top-button').addEventListener('click', function () {
+                        feed.prepend(postElement); // Move o post para o início do feed
+                    });
+
+                    // Função para excluir o post
+                    postElement.querySelector('.delete-button').addEventListener('click', function () {
+                        if (confirm('Você tem certeza que deseja excluir esta postagem?')) {
+                            deletePost(post.id); // Chama a função para excluir do IndexedDB
+                        }
+                    });
+
+                    // Configuração da contagem regressiva
+                    const countdownElement = postElement.querySelector('.countdown');
+                    const countdownInterval = setInterval(function () {
+                        const currentTime = Date.now(); // Timestamp atual
+                        const timeRemaining = 24 * 60 * 60 * 1000 - (currentTime - post.timestamp); // 24 horas em milissegundos
+
+                        if (timeRemaining <= 0) {
+                            clearInterval(countdownInterval);
+                            deletePost(post.id); // Exclui o post após o término do tempo
+                        } else {
+                            const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                            const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+                            const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+                            countdownElement.textContent = `${hours}h ${minutes}m ${seconds}s`;
+                        }
+                    }, 1000);
+
+                    feed.appendChild(postElement);
+                });
+            };
+
+            request.onerror = function (event) {
+                console.error('Erro ao carregar as postagens', event);
+            };
+        }
+
+        // Função para excluir uma postagem
+        function deletePost(id) {
+            const transaction = db.transaction(['posts'], 'readwrite');
+            const objectStore = transaction.objectStore('posts');
+            const request = objectStore.delete(id);
+
+            request.onsuccess = function () {
+                console.log('Postagem excluída com sucesso!');
+                loadPosts(); // Recarrega as postagens após excluir
+            };
+
+            request.onerror = function (event) {
+                console.error('Erro ao excluir a postagem', event);
+            };
+        }
+
+        // Mostrar e ocultar a caixa de nova postagem
+        document.getElementById('new-post-button').addEventListener('click', function () {
+            const postBox = document.getElementById('post-box');
+            postBox.classList.toggle('show');
+            postBox.classList.toggle('hide');
+        });
+
+        // Pré-visualização da imagem antes do upload
+        document.getElementById('image-upload').addEventListener('change', function (event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const previewImage = document.getElementById('preview-image');
+                    previewImage.src = e.target.result;
+                    previewImage.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Adicionar uma nova postagem
+        document.getElementById('post-button').addEventListener('click', function () {
+            const content = document.getElementById('post-content').value;
+            const image = document.getElementById('preview-image').src || null;
+
+            if (content || image) {
+                addPost(content, image);
+                document.getElementById('post-content').value = ''; // Limpa o conteúdo após publicar
+                document.getElementById('preview-image').style.display = 'none'; // Oculta a pré-visualização da imagem
+                const postBox = document.getElementById('post-box');
+                postBox.classList.add('hide');
+                setTimeout(() => postBox.classList.remove('show', 'hide'), 300); // Aguarda a transição de ocultação
+            } else {
+                alert('Por favor, adicione um texto ou uma imagem!');
+            }
+        });
+    </script>
+</body>
+
+</html>
