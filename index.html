@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -152,13 +151,8 @@
         #new-post-button:hover {
             background-color: #333;
         }
-
-        .delete-button {
-            color: #ff0000;
-        }
     </style>
 </head>
-
 <body>
     <!-- Navbar -->
     <div id="navbar">
@@ -189,7 +183,7 @@
         <button id="post-button">Publicar</button>
     </div>
 
-    <!-- Botão de Nova Postagem -->
+    <!-- Botão Flutuante de Nova Postagem -->
     <button id="new-post-button">
         <i class="fas fa-plus"></i>
     </button>
@@ -327,9 +321,9 @@
                     });
             };
 
-            loadPosts(); // Carregar postagens ao iniciar
+            // Carregar postagens inicialmente
+            loadPosts();
         });
     </script>
 </body>
-
 </html>
