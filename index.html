@@ -152,6 +152,10 @@
         #new-post-button:hover {
             background-color: #333;
         }
+
+        .delete-button {
+            color: #ff0000;
+        }
     </style>
 </head>
 
@@ -174,76 +178,30 @@
 
     <!-- Caixa de Nova Postagem -->
     <div id="post-box">
-        <form id="post-form" enctype="multipart/form-data">
-            <textarea id="post-content" name="conteudo" placeholder="O que você está pensando?" required></textarea>
-            <div class="icon-container">
-                <label for="image-upload">
-                    <i class="fas fa-camera"></i>
-                </label>
-                <input type="file" id="image-upload" name="imagem" accept="image/*">
-            </div>
-            <img id="preview-image" alt="Pré-visualização da Imagem">
-            <button type="submit" id="post-button">Publicar</button>
-        </form>
+        <textarea id="post-content" placeholder="O que você está pensando?"></textarea>
+        <div class="icon-container">
+            <label for="image-upload">
+                <i class="fas fa-camera"></i>
+            </label>
+            <input type="file" id="image-upload" accept="image/*">
+        </div>
+        <img id="preview-image" alt="Pré-visualização da Imagem">
+        <button id="post-button">Publicar</button>
     </div>
 
     <!-- Botão Flutuante de Nova Postagem -->
     <button id="new-post-button">+</button>
 
     <script>
-        // Função para exibir a caixa de postagem
-        document.getElementById('new-post-button').addEventListener('click', function () {
-            const postBox = document.getElementById('post-box');
-            postBox.style.display = postBox.style.display === 'none' || postBox.style.display === '' ? 'block' : 'none';
-        });
-
-        // Pré-visualização da imagem antes do upload
-        document.getElementById('image-upload').addEventListener('change', function (event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    const previewImage = document.getElementById('preview-image');
-                    previewImage.src = e.target.result;
-                    previewImage.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        // Função para enviar o post para o servidor
-        document.getElementById('post-form').addEventListener('submit', function (event) {
-            event.preventDefault();
-
-            const formData = new FormData(this);  // Captura os dados do formulário, incluindo a imagem
-            fetch('salvar_post.php', {
-                method: 'POST',
-                body: formData
-            }).then(response => {
-                if (response.ok) {
-                    console.log('Postagem enviada com sucesso!');
-                    loadPosts();  // Recarregar os posts
-                } else {
-                    console.error('Erro ao enviar a postagem');
-                }
-            }).catch(error => {
-                console.error('Erro na requisição:', error);
-            });
-
-            // Limpar campos após o envio
-            document.getElementById('post-content').value = '';
-            document.getElementById('preview-image').style.display = 'none';
-            document.getElementById('post-box').style.display = 'none';
-        });
-
-        // Função para carregar as postagens do servidor
+        // Função para carregar postagens
         function loadPosts() {
             fetch('listar_posts.php')
                 .then(response => response.json())
                 .then(posts => {
                     const feed = document.getElementById('feed');
-                    feed.innerHTML = '';  // Limpa o feed antes de carregar novamente
+                    feed.innerHTML = ''; // Limpa o feed antes de carregar novamente
 
+                    // Inverter a ordem dos posts para mostrar o mais recente no topo
                     posts.reverse().forEach(post => {
                         const postElement = document.createElement('div');
                         postElement.classList.add('post');
@@ -266,21 +224,108 @@
 
                         // Função para mover o post para o topo
                         postElement.querySelector('.move-top-button').addEventListener('click', function () {
-                            feed.prepend(postElement);  // Move o post para o início do feed
+                            feed.prepend(postElement); // Move o post para o início do feed
+                        });
+
+                        // Função para excluir o post
+                        postElement.querySelector('.delete-button').addEventListener('click', function () {
+                            deletePost(post.id); // Chama a função para excluir do IndexedDB
                         });
 
                         feed.appendChild(postElement);
                     });
                 })
                 .catch(error => {
-                    console.error('Erro ao carregar as postagens:', error);
+                    console.error('Erro ao carregar as postagens', error);
                 });
         }
 
-        // Carregar os posts ao iniciar a página
-        window.onload = function () {
-            loadPosts();
-        };
+        // Função para excluir uma postagem
+        function deletePost(id) {
+            fetch('delete_post.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id })
+            })
+                .then(response => response.text())
+                .then(message => {
+                    console.log(message);
+                    loadPosts(); // Recarrega as postagens após excluir
+                })
+                .catch(error => {
+                    console.error('Erro ao excluir a postagem', error);
+                });
+        }
+
+        // Mostrar e ocultar a caixa de nova postagem
+        document.getElementById('new-post-button').addEventListener('click', function () {
+            const postBox = document.getElementById('post-box');
+            postBox.style.display = postBox.style.display === 'none' || postBox.style.display === '' ? 'block' : 'none';
+        });
+
+        // Pré-visualização da imagem antes do upload
+        document.getElementById('image-upload').addEventListener('change', function (event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const previewImage = document.getElementById('preview-image');
+                    previewImage.src = e.target.result;
+                    previewImage.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Adicionar uma nova postagem
+        document.getElementById('post-button').addEventListener('click', function () {
+            const content = document.getElementById('post-content').value;
+            const image = document.getElementById('preview-image').src || null;
+
+            if (content || image) {
+                const formData = new FormData();
+                formData.append('conteudo', content);
+                if (image) {
+                    const imageBlob = dataURLToBlob(image);
+                    formData.append('imagem', imageBlob, 'image.jpg');
+                }
+
+                fetch('salvar_post.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.text())
+                    .then(message => {
+                        console.log(message);
+                        loadPosts(); // Recarrega as postagens após adicionar uma nova
+                        document.getElementById('post-content').value = ''; // Limpa o conteúdo após publicar
+                        document.getElementById('preview-image').style.display = 'none'; // Oculta a pré-visualização da imagem
+                        document.getElementById('post-box').style.display = 'none'; // Oculta a caixa de postagem
+                    })
+                    .catch(error => {
+                        console.error('Erro ao adicionar a postagem', error);
+                    });
+            } else {
+                alert('Por favor, adicione um texto ou uma imagem!');
+            }
+        });
+
+        // Função para converter uma URL de dados em Blob
+        function dataURLToBlob(dataURL) {
+            const [header, data] = dataURL.split(',');
+            const mime = header.split(':')[1].split(';')[0];
+            const binary = atob(data);
+            const array = [];
+            for (let i = 0; i < binary.length; i++) {
+                array.push(binary.charCodeAt(i));
+            }
+            return new Blob([new Uint8Array(array)], { type: mime });
+        }
+
+        // Carregar posts ao iniciar
+        loadPosts();
     </script>
 </body>
 
