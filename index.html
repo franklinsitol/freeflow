@@ -189,143 +189,146 @@
         <button id="post-button">Publicar</button>
     </div>
 
-    <!-- Botão Flutuante de Nova Postagem -->
-    <button id="new-post-button">+</button>
+    <!-- Botão de Nova Postagem -->
+    <button id="new-post-button">
+        <i class="fas fa-plus"></i>
+    </button>
 
     <script>
-        // Função para carregar postagens
-        function loadPosts() {
-            fetch('listar_posts.php')
-                .then(response => response.json())
-                .then(posts => {
-                    const feed = document.getElementById('feed');
-                    feed.innerHTML = ''; // Limpa o feed antes de carregar novamente
-
-                    // Inverter a ordem dos posts para mostrar o mais recente no topo
-                    posts.reverse().forEach(post => {
-                        const postElement = document.createElement('div');
-                        postElement.classList.add('post');
-
-                        let postContent = '';
-                        if (post.imagem) {
-                            postContent += `<img src="${post.imagem}" alt="Post Image" class="post-image">`;
-                        }
-                        postContent += `<div class="post-content">${post.conteudo}</div>`;
-
-                        postElement.innerHTML = `
-                            ${postContent}
-                            <div class="actions">
-                                <i class="fas fa-thumbs-up applause-button"></i>
-                                <i class="fas fa-comment comment-button"></i>
-                                <i class="fas fa-arrow-up move-top-button"></i>
-                                <i class="fas fa-trash delete-button"></i>
-                            </div>
-                        `;
-
-                        // Função para mover o post para o topo
-                        postElement.querySelector('.move-top-button').addEventListener('click', function () {
-                            feed.prepend(postElement); // Move o post para o início do feed
-                        });
-
-                        // Função para excluir o post
-                        postElement.querySelector('.delete-button').addEventListener('click', function () {
-                            deletePost(post.id); // Chama a função para excluir do IndexedDB
-                        });
-
-                        feed.appendChild(postElement);
-                    });
-                })
-                .catch(error => {
-                    console.error('Erro ao carregar as postagens', error);
-                });
-        }
-
-        // Função para excluir uma postagem
-        function deletePost(id) {
-            fetch('delete_post.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ id })
-            })
-                .then(response => response.text())
-                .then(message => {
-                    console.log(message);
-                    loadPosts(); // Recarrega as postagens após excluir
-                })
-                .catch(error => {
-                    console.error('Erro ao excluir a postagem', error);
-                });
-        }
-
-        // Mostrar e ocultar a caixa de nova postagem
-        document.getElementById('new-post-button').addEventListener('click', function () {
+        document.addEventListener('DOMContentLoaded', function () {
+            // Elementos
+            const feed = document.getElementById('feed');
             const postBox = document.getElementById('post-box');
-            postBox.style.display = postBox.style.display === 'none' || postBox.style.display === '' ? 'block' : 'none';
-        });
+            const newPostButton = document.getElementById('new-post-button');
+            const postButton = document.getElementById('post-button');
+            const postContent = document.getElementById('post-content');
+            const imageUpload = document.getElementById('image-upload');
+            const previewImage = document.getElementById('preview-image');
 
-        // Pré-visualização da imagem antes do upload
-        document.getElementById('image-upload').addEventListener('change', function (event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    const previewImage = document.getElementById('preview-image');
-                    previewImage.src = e.target.result;
-                    previewImage.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            }
-        });
+            // Exibir caixa de nova postagem
+            newPostButton.addEventListener('click', function () {
+                postBox.style.display = postBox.style.display === 'none' ? 'block' : 'none';
+            });
 
-        // Adicionar uma nova postagem
-        document.getElementById('post-button').addEventListener('click', function () {
-            const content = document.getElementById('post-content').value;
-            const image = document.getElementById('preview-image').src || null;
+            // Pré-visualizar imagem
+            imageUpload.addEventListener('change', function () {
+                const file = imageUpload.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        previewImage.src = e.target.result;
+                        previewImage.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    previewImage.style.display = 'none';
+                }
+            });
 
-            if (content || image) {
+            // Enviar nova postagem
+            postButton.addEventListener('click', function () {
                 const formData = new FormData();
-                formData.append('conteudo', content);
-                if (image) {
-                    const imageBlob = dataURLToBlob(image);
-                    formData.append('imagem', imageBlob, 'image.jpg');
+                formData.append('conteudo', postContent.value);
+                if (imageUpload.files.length > 0) {
+                    formData.append('imagem', imageUpload.files[0]);
                 }
 
                 fetch('salvar_post.php', {
                     method: 'POST',
                     body: formData
                 })
-                    .then(response => response.text())
-                    .then(message => {
-                        console.log(message);
-                        loadPosts(); // Recarrega as postagens após adicionar uma nova
-                        document.getElementById('post-content').value = ''; // Limpa o conteúdo após publicar
-                        document.getElementById('preview-image').style.display = 'none'; // Oculta a pré-visualização da imagem
-                        document.getElementById('post-box').style.display = 'none'; // Oculta a caixa de postagem
+                .then(response => response.text())
+                .then(data => {
+                    alert(data);
+                    postContent.value = '';
+                    imageUpload.value = '';
+                    previewImage.style.display = 'none';
+                    loadPosts(); // Recarrega as postagens
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                });
+            });
+
+            // Carregar postagens
+            function loadPosts() {
+                fetch('listar_posts.php')
+                    .then(response => response.json())
+                    .then(posts => {
+                        feed.innerHTML = '';
+                        posts.forEach(post => {
+                            const postElement = document.createElement('div');
+                            postElement.className = 'post';
+                            postElement.innerHTML = `
+                                <div class="post-content">${post.conteudo}</div>
+                                ${post.imagem ? `<img class="post-image" src="uploads/${post.imagem}" alt="Imagem do Post">` : ''}
+                                <div class="actions">
+                                    <i class="fas fa-thumbs-up"></i>
+                                    <i class="fas fa-comment"></i>
+                                    <i class="fas fa-arrow-up" onclick="moveToTop(${post.id})"></i>
+                                    <i class="fas fa-trash delete-button" onclick="deletePost(${post.id})"></i>
+                                </div>
+                            `;
+                            feed.appendChild(postElement);
+                        });
                     })
                     .catch(error => {
-                        console.error('Erro ao adicionar a postagem', error);
+                        console.error('Erro ao carregar postagens:', error);
                     });
-            } else {
-                alert('Por favor, adicione um texto ou uma imagem!');
             }
+
+            // Deletar postagem
+            window.deletePost = function (id) {
+                fetch('delete_post.php', {
+                    method: 'DELETE',
+                    body: JSON.stringify({ id: id }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.text())
+                .then(data => {
+                    alert(data);
+                    loadPosts(); // Recarrega as postagens
+                })
+                .catch(error => {
+                    console.error('Erro ao deletar postagem:', error);
+                });
+            };
+
+            // Mover postagem para o topo
+            window.moveToTop = function (id) {
+                fetch('listar_posts.php')
+                    .then(response => response.json())
+                    .then(posts => {
+                        const postToMove = posts.find(post => post.id === id);
+                        if (postToMove) {
+                            posts = posts.filter(post => post.id !== id);
+                            posts.unshift(postToMove);
+                            fetch('salvar_post.php', {
+                                method: 'POST',
+                                body: JSON.stringify({ posts: posts }),
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                }
+                            })
+                            .then(response => response.text())
+                            .then(data => {
+                                alert(data);
+                                loadPosts(); // Recarrega as postagens
+                            })
+                            .catch(error => {
+                                console.error('Erro ao mover postagem:', error);
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro ao carregar postagens:', error);
+                    });
+            };
+
+            loadPosts(); // Carregar postagens ao iniciar
         });
-
-        // Função para converter uma URL de dados em Blob
-        function dataURLToBlob(dataURL) {
-            const [header, data] = dataURL.split(',');
-            const mime = header.split(':')[1].split(';')[0];
-            const binary = atob(data);
-            const array = [];
-            for (let i = 0; i < binary.length; i++) {
-                array.push(binary.charCodeAt(i));
-            }
-            return new Blob([new Uint8Array(array)], { type: mime });
-        }
-
-        // Carregar posts ao iniciar
-        loadPosts();
     </script>
 </body>
 
