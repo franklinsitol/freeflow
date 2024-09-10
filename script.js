@@ -11,8 +11,7 @@ async function getPosts() {
     });
 
     if (!response.ok) {
-      const errorDetails = await response.text();
-      throw new Error(`Error fetching posts: ${response.status} ${response.statusText}. Details: ${errorDetails}`);
+      throw new Error(`Error fetching posts: ${response.status} ${response.statusText}`);
     }
 
     const files = await response.json();
@@ -22,8 +21,7 @@ async function getPosts() {
     for (const file of files) {
       const postResponse = await fetch(file.download_url);
       if (!postResponse.ok) {
-        const postErrorDetails = await postResponse.text();
-        throw new Error(`Error fetching post: ${postResponse.status} ${postResponse.statusText}. Details: ${postErrorDetails}`);
+        throw new Error(`Error fetching post: ${postResponse.status} ${postResponse.statusText}`);
       }
       const post = await postResponse.json();
 
@@ -64,8 +62,7 @@ async function submitPost() {
     });
 
     if (!response.ok) {
-      const errorDetails = await response.text();
-      throw new Error(`Error creating post: ${response.status} ${response.statusText}. Details: ${errorDetails}`);
+      throw new Error(`Error creating post: ${response.status} ${response.statusText}`);
     }
 
     alert('Post criado com sucesso!');
