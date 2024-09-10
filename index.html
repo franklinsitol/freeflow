@@ -1,25 +1,38 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Freeflow - Postagem</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <h1>Postagens</h1>
-  <div id="posts"></div>
+const githubApiUrl = 'https://api.github.com/repos/franklinsitol/freeflow/contents/posts/posts.json';
+const token = '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'; // Novo token de acesso pessoal
 
-  <button id="newPostBtn">Novo Post</button>
+async function getPosts() {
+  try {
+    const response = await fetch(githubApiUrl, {
+      headers: {
+        Authorization: `token ${token}`,
+      },
+    });
 
-  <div id="newPostModal" style="display: none;">
-    <h2>Criar Novo Post</h2>
-    <input type="text" id="postTitle" placeholder="Título"><br>
-    <textarea id="postContent" placeholder="Escreva seu post aqui..."></textarea><br>
-    <button onclick="submitPost()">Enviar</button>
-    <button onclick="closeModal()">Fechar</button>
-  </div>
+    if (!response.ok) {
+      throw new Error(`Error fetching posts: ${response.status} ${response.statusText}`);
+    }
 
-  <script src="script.js"></script>
-</body>
-</html>
+    const file = await response.json();
+    const postResponse = await fetch(atob(file.content)); // Decodifica o conteúdo Base64
+
+    if (!postResponse.ok) {
+      throw new Error(`Error fetching post: ${postResponse.status} ${postResponse.statusText}`);
+    }
+
+    const posts = await postResponse.json();
+    const postsDiv = document.getElementById('posts');
+    postsDiv.innerHTML = ''; // Limpa antes de carregar os posts
+
+    for (const post of posts) {
+      const postDiv = document.createElement('div');
+      postDiv.innerHTML = `<h3>${post.title}</h3><p>${post.body}</p>`;
+      postsDiv.appendChild(postDiv);
+    }
+  } catch (error) {
+    console.error(error);
+    alert('Erro ao carregar posts. Verifique o console para mais detalhes.');
+  }
+}
+
+getPosts();
