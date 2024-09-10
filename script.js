@@ -1,5 +1,5 @@
 const githubApiUrl = 'https://api.github.com/repos/franklinsitol/freeflow/contents/posts';
-const token = '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'; // Novo token
+const token = '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'; // Substitua pelo seu token
 
 // Função para carregar posts existentes
 async function getPosts() {
@@ -7,7 +7,7 @@ async function getPosts() {
     const response = await fetch(githubApiUrl, {
       headers: {
         Authorization: `token ${token}`,
-        Accept: 'application/vnd.github.v3+json', // Adiciona o cabeçalho Accept
+        Accept: 'application/vnd.github.v3+json',
       },
     });
 
@@ -17,22 +17,25 @@ async function getPosts() {
 
     const files = await response.json();
     console.log('Files:', files); // Verifique o conteúdo da resposta no console
+
     const postsDiv = document.getElementById('posts');
     postsDiv.innerHTML = ''; // Limpa antes de carregar os posts
 
     for (const file of files) {
-      const postResponse = await fetch(file.download_url);
-      if (!postResponse.ok) {
-        throw new Error(`Error fetching post: ${postResponse.status} ${postResponse.statusText}`);
-      }
-      const post = await postResponse.json();
+      if (file.type === 'file') {
+        const postResponse = await fetch(file.download_url);
+        if (!postResponse.ok) {
+          throw new Error(`Error fetching post: ${postResponse.status} ${postResponse.statusText}`);
+        }
+        const post = await postResponse.json();
 
-      const postDiv = document.createElement('div');
-      postDiv.innerHTML = `<h3>${post.title}</h3><p>${post.body}</p>`;
-      postsDiv.appendChild(postDiv);
+        const postDiv = document.createElement('div');
+        postDiv.innerHTML = `<h3>${post.title}</h3><p>${post.body}</p>`;
+        postsDiv.appendChild(postDiv);
+      }
     }
   } catch (error) {
-    console.error(error);
+    console.error('Error in getPosts:', error);
     alert('Erro ao carregar posts. Verifique o console para mais detalhes.');
   }
 }
@@ -56,7 +59,7 @@ async function submitPost() {
       headers: {
         Authorization: `token ${token}`,
         'Content-Type': 'application/json',
-        Accept: 'application/vnd.github.v3+json', // Adiciona o cabeçalho Accept
+        Accept: 'application/vnd.github.v3+json',
       },
       body: JSON.stringify({
         message: `Novo post: ${title}`,
@@ -69,21 +72,11 @@ async function submitPost() {
     }
 
     alert('Post criado com sucesso!');
-    closeModal();
     getPosts();
   } catch (error) {
-    console.error(error);
+    console.error('Error in submitPost:', error);
     alert('Erro ao criar post. Verifique o console para mais detalhes.');
   }
-}
-
-// Funções para controlar o modal de novo post
-document.getElementById('newPostBtn').addEventListener('click', function() {
-  document.getElementById('newPostModal').style.display = 'block';
-});
-
-function closeModal() {
-  document.getElementById('newPostModal').style.display = 'none';
 }
 
 // Carrega os posts ao iniciar a página
