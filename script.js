@@ -1,5 +1,5 @@
 const githubApiUrl = 'https://api.github.com/repos/franklinsitol/freeflow/contents/posts';
-const token = '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'; // Substitua com a nova chave
+const token = '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'; // Novo token
 
 // Função para carregar posts existentes
 async function getPosts() {
@@ -7,6 +7,7 @@ async function getPosts() {
     const response = await fetch(githubApiUrl, {
       headers: {
         Authorization: `token ${token}`,
+        Accept: 'application/vnd.github.v3+json', // Adiciona o cabeçalho Accept
       },
     });
 
@@ -15,7 +16,7 @@ async function getPosts() {
     }
 
     const files = await response.json();
-    console.log('Files:', files); // Verifique o conteúdo da resposta
+    console.log('Files:', files); // Verifique o conteúdo da resposta no console
     const postsDiv = document.getElementById('posts');
     postsDiv.innerHTML = ''; // Limpa antes de carregar os posts
 
@@ -55,6 +56,7 @@ async function submitPost() {
       headers: {
         Authorization: `token ${token}`,
         'Content-Type': 'application/json',
+        Accept: 'application/vnd.github.v3+json', // Adiciona o cabeçalho Accept
       },
       body: JSON.stringify({
         message: `Novo post: ${title}`,
