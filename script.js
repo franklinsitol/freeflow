@@ -1,5 +1,5 @@
 const githubApiUrl = 'https://api.github.com/repos/franklinsitol/freeflow/contents/posts';
-const token = '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'; // Novo token de acesso pessoal
+const token = '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'; // Novo token de acesso pessoal
 
 // Função para carregar posts existentes
 async function getPosts() {
