@@ -54,6 +54,7 @@ body {
 .actions {
     display: flex;
     justify-content: space-between;
+    margin-top: 10px;
 }
 
 #post-box {
@@ -71,6 +72,11 @@ body {
     margin-bottom: 10px;
 }
 
+#file-input {
+    display: block;
+    margin-bottom: 10px;
+}
+
 #preview-image {
     max-width: 100%;
     height: auto;
@@ -80,7 +86,6 @@ body {
 #new-post-button, #back-to-top {
     position: fixed;
     bottom: 20px;
-    right: 20px;
     background-color: #333;
     color: #fff;
     border: none;
@@ -89,7 +94,12 @@ body {
     cursor: pointer;
 }
 
+#new-post-button {
+    right: 20px;
+}
+
 #back-to-top {
+    right: 80px; /* Ajuste para não sobrepor com o botão de nova postagem */
     background-color: #007bff;
 }
 
@@ -121,4 +131,8 @@ body {
     width: calc(100% - 20px);
     padding: 10px;
     margin-bottom: 10px;
+}
+
+.modal-content button {
+    margin-right: 10px;
 }
