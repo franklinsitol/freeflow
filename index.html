@@ -152,6 +152,10 @@
         #new-post-button:hover {
             background-color: #333;
         }
+
+        .delete-button {
+            color: #ff0000;
+        }
     </style>
 </head>
 
@@ -189,13 +193,13 @@
     <button id="new-post-button">+</button>
 
     <script>
-        // Função para carregar os posts do servidor
+        // Função para carregar as postagens
         function loadPosts() {
-            fetch('/posts')
+            fetch('load_posts.php') // Carrega os posts do backend
                 .then(response => response.json())
                 .then(posts => {
                     const feed = document.getElementById('feed');
-                    feed.innerHTML = ''; // Limpa o feed antes de carregar novamente
+                    feed.innerHTML = ''; // Limpa o feed antes de carregar os posts
 
                     posts.reverse().forEach(post => {
                         const postElement = document.createElement('div');
@@ -217,14 +221,14 @@
                             </div>
                         `;
 
-                        // Adiciona a funcionalidade de mover para o topo
+                        // Função para mover o post para o topo
                         postElement.querySelector('.move-top-button').addEventListener('click', function () {
                             feed.prepend(postElement); // Move o post para o início do feed
                         });
 
-                        // Adiciona a funcionalidade de excluir
+                        // Função para excluir o post
                         postElement.querySelector('.delete-button').addEventListener('click', function () {
-                            deletePost(post.id); // Chama a função para excluir o post
+                            deletePost(post.id); // Chama a função para excluir do backend
                         });
 
                         feed.appendChild(postElement);
@@ -235,23 +239,46 @@
 
         // Função para excluir uma postagem
         function deletePost(id) {
-            fetch(`/delete_post.php?id=${id}`, { method: 'DELETE' })
-                .then(response => {
-                    if (response.ok) {
-                        console.log('Postagem excluída com sucesso');
-                        loadPosts(); // Recarrega o feed
-                    } else {
-                        console.error('Erro ao excluir a postagem');
-                    }
+            fetch(`delete_post.php?id=${id}`, { method: 'DELETE' })
+                .then(response => response.text())
+                .then(result => {
+                    console.log(result);
+                    loadPosts(); // Recarrega as postagens após excluir
                 })
                 .catch(error => console.error('Erro ao excluir a postagem:', error));
         }
 
-        // Função para adicionar uma postagem
+        // Mostrar e ocultar a caixa de nova postagem
+        document.getElementById('new-post-button').addEventListener('click', function () {
+            const postBox = document.getElementById('post-box');
+            postBox.style.display = postBox.style.display === 'none' || postBox.style.display === '' ? 'block' : 'none';
+        });
+
+        // Pré-visualização da imagem antes do upload
+        document.getElementById('image-upload').addEventListener('change', function (event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const previewImage = document.getElementById('preview-image');
+                    previewImage.src = e.target.result;
+                    previewImage.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Adicionar uma nova postagem
         document.getElementById('post-button').addEventListener('click', function () {
             const content = document.getElementById('post-content').value;
             const imageInput = document.getElementById('image-upload');
             const image = imageInput.files[0] || null;
+
+            // Verifica se o campo de conteúdo está vazio
+            if (!content.trim() && !image) {
+                alert('Por favor, insira algum conteúdo ou uma imagem antes de publicar.');
+                return; // Sai da função se o conteúdo e a imagem estiverem vazios
+            }
 
             const formData = new FormData();
             formData.append('content', content);
@@ -259,31 +286,23 @@
                 formData.append('image', image);
             }
 
-            fetch('/save_post.php', {
+            fetch('save_post.php', { // Certifique-se de que o caminho para o PHP está correto
                 method: 'POST',
                 body: formData,
             })
-                .then(response => {
-                    if (response.ok) {
-                        console.log('Postagem adicionada com sucesso!');
-                        document.getElementById('post-content').value = ''; // Limpa o conteúdo
-                        imageInput.value = ''; // Limpa a imagem
-                        loadPosts(); // Recarrega as postagens
-                    } else {
-                        console.error('Erro ao adicionar a postagem');
-                    }
+                .then(response => response.text()) // Verifica o retorno como texto
+                .then(result => {
+                    console.log('Postagem adicionada com sucesso!', result);
+                    document.getElementById('post-content').value = ''; // Limpa o campo de conteúdo
+                    imageInput.value = ''; // Limpa o campo de imagem
+                    document.getElementById('preview-image').style.display = 'none'; // Oculta a pré-visualização da imagem
+                    loadPosts(); // Recarrega os posts após a postagem
                 })
                 .catch(error => console.error('Erro ao adicionar a postagem:', error));
         });
 
-        // Exibir/ocultar a caixa de nova postagem
-        document.getElementById('new-post-button').addEventListener('click', function () {
-            const postBox = document.getElementById('post-box');
-            postBox.style.display = postBox.style.display === 'none' || postBox.style.display === '' ? 'block' : 'none';
-        });
-
-        // Carregar os posts ao abrir a página
-        loadPosts();
+        // Carregar as postagens ao carregar a página
+        window.onload = loadPosts;
     </script>
 </body>
 
