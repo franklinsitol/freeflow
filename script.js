@@ -3,23 +3,31 @@ const token = 'github_pat_11BLCZM3Y0zAzpGveEzDB3_v6TCDabl4s550mmJwrRtCXj1swZyNJe
 
 // Função para carregar posts existentes
 async function getPosts() {
-  const response = await fetch(githubApiUrl, {
-    headers: {
-      Authorization: `token ${token}`,
-    },
-  });
-  const files = await response.json();
+  try {
+    const response = await fetch(githubApiUrl, {
+      headers: {
+        Authorization: `token ${token}`,
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`Error fetching posts: ${response.statusText}`);
+    }
+    const files = await response.json();
 
-  const postsDiv = document.getElementById('posts');
-  postsDiv.innerHTML = ''; // Limpa antes de carregar os posts
+    const postsDiv = document.getElementById('posts');
+    postsDiv.innerHTML = ''; // Limpa antes de carregar os posts
 
-  for (const file of files) {
-    const postResponse = await fetch(file.download_url);
-    const post = await postResponse.json();
+    for (const file of files) {
+      const postResponse = await fetch(file.download_url);
+      const post = await postResponse.json();
 
-    const postDiv = document.createElement('div');
-    postDiv.innerHTML = `<h3>${post.title}</h3><p>${post.body}</p>`;
-    postsDiv.appendChild(postDiv);
+      const postDiv = document.createElement('div');
+      postDiv.innerHTML = `<h3>${post.title}</h3><p>${post.body}</p>`;
+      postsDiv.appendChild(postDiv);
+    }
+  } catch (error) {
+    console.error(error);
+    alert('Erro ao carregar posts.');
   }
 }
 
@@ -36,23 +44,28 @@ async function submitPost() {
   const fileName = `post-${Date.now()}.json`;
   const fileContent = btoa(JSON.stringify(newPost)); // Codifica o post para base64
 
-  const response = await fetch(`${githubApiUrl}/${fileName}`, {
-    method: 'PUT',
-    headers: {
-      Authorization: `token ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      message: `Novo post: ${title}`,
-      content: fileContent,
-    }),
-  });
+  try {
+    const response = await fetch(`${githubApiUrl}/${fileName}`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `token ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: `Novo post: ${title}`,
+        content: fileContent,
+      }),
+    });
 
-  if (response.ok) {
+    if (!response.ok) {
+      throw new Error(`Error creating post: ${response.statusText}`);
+    }
+
     alert('Post criado com sucesso!');
     closeModal();
     getPosts();
-  } else {
+  } catch (error) {
+    console.error(error);
     alert('Erro ao criar post.');
   }
 }
