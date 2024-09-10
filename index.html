@@ -3,93 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Social Feed</title>
-  <script type="module">
-    // Importa as funções necessárias do SDK
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.8.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, orderBy, query } from "https://www.gstatic.com/firebasejs/9.8.1/firebase-firestore.js";
-    import { getAuth } from "https://www.gstatic.com/firebasejs/9.8.1/firebase-auth.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.8.1/firebase-analytics.js";
-
-    // Configuração do Firebase
-    const firebaseConfig = {
-      apiKey: "AIzaSyAkvcWKEOSxy5ONnRhjFWunoHGb_hcxdms",
-      authDomain: "freeflow-17f32.firebaseapp.com",
-      projectId: "freeflow-17f32",
-      storageBucket: "freeflow-17f32.appspot.com",
-      messagingSenderId: "408661719473",
-      appId: "1:408661719473:web:48aaefb4f9aec6c0d22590",
-      measurementId: "G-FBX0JHGS47"
-    };
-
-    // Inicializa o Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-    const analytics = getAnalytics(app);
-
-    // Função para postar uma mensagem
-    async function postMessage(content) {
-      try {
-        await addDoc(collection(db, "posts"), {
-          content,
-          timestamp: new Date()
-        });
-        console.log("Message posted successfully");
-      } catch (e) {
-        console.error("Error adding document: ", e);
-      }
-    }
-
-    // Exibir mensagens
-    function displayPosts() {
-      const postsContainer = document.getElementById('posts');
-      const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
-      onSnapshot(q, (querySnapshot) => {
-        console.log('Snapshot received');
-        postsContainer.innerHTML = '';
-        querySnapshot.forEach((doc) => {
-          console.log('Document data:', doc.data());
-          const post = doc.data();
-          const postElement = document.createElement('div');
-          postElement.className = 'post';
-          postElement.textContent = post.content;
-          postsContainer.appendChild(postElement);
-        });
-      }, (error) => {
-        console.error("Error fetching documents: ", error);
-      });
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      // Manipula o envio do formulário
-      document.getElementById('postForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const content = document.getElementById('postContent').value;
-        if (content) {
-          await postMessage(content);
-          document.getElementById('postContent').value = '';
-        } else {
-          console.warn('Post content is empty');
-        }
-      });
-
-      // Exibe as mensagens ao carregar a página
-      displayPosts();
-    });
-  </script>
-  <style>
-    body { font-family: Arial, sans-serif; }
-    .post { margin: 10px; padding: 10px; border: 1px solid #ddd; }
-    #postForm { margin: 10px; }
-  </style>
+  <title>Freeflow - Postagem</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>My Social Feed</h1>
-  <form id="postForm">
-    <textarea id="postContent" placeholder="Write something..." rows="4" cols="50"></textarea><br>
-    <button type="submit">Post</button>
-  </form>
+  <h1>Postagens</h1>
   <div id="posts"></div>
+
+  <button id="newPostBtn">Novo Post</button>
+
+  <div id="newPostModal" style="display: none;">
+    <h2>Criar Novo Post</h2>
+    <input type="text" id="postTitle" placeholder="Título"><br>
+    <textarea id="postContent" placeholder="Escreva seu post aqui..."></textarea><br>
+    <button onclick="submitPost()">Enviar</button>
+    <button onclick="closeModal()">Fechar</button>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
