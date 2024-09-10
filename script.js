@@ -1,5 +1,5 @@
 const githubApiUrl = 'https://api.github.com/repos/franklinsitol/freeflow/contents/posts';
-const token = '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'; // Token de acesso pessoal
+const token = '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'; // Novo token de acesso pessoal
 
 // Função para carregar posts existentes
 async function getPosts() {
@@ -9,16 +9,20 @@ async function getPosts() {
         Authorization: `token ${token}`,
       },
     });
-    if (!response.ok) {
-      throw new Error(`Error fetching posts: ${response.statusText}`);
-    }
-    const files = await response.json();
 
+    if (!response.ok) {
+      throw new Error(`Error fetching posts: ${response.status} ${response.statusText}`);
+    }
+
+    const files = await response.json();
     const postsDiv = document.getElementById('posts');
     postsDiv.innerHTML = ''; // Limpa antes de carregar os posts
 
     for (const file of files) {
       const postResponse = await fetch(file.download_url);
+      if (!postResponse.ok) {
+        throw new Error(`Error fetching post: ${postResponse.status} ${postResponse.statusText}`);
+      }
       const post = await postResponse.json();
 
       const postDiv = document.createElement('div');
@@ -27,7 +31,7 @@ async function getPosts() {
     }
   } catch (error) {
     console.error(error);
-    alert('Erro ao carregar posts.');
+    alert('Erro ao carregar posts. Verifique o console para mais detalhes.');
   }
 }
 
@@ -58,7 +62,7 @@ async function submitPost() {
     });
 
     if (!response.ok) {
-      throw new Error(`Error creating post: ${response.statusText}`);
+      throw new Error(`Error creating post: ${response.status} ${response.statusText}`);
     }
 
     alert('Post criado com sucesso!');
@@ -66,7 +70,7 @@ async function submitPost() {
     getPosts();
   } catch (error) {
     console.error(error);
-    alert('Erro ao criar post.');
+    alert('Erro ao criar post. Verifique o console para mais detalhes.');
   }
 }
 
