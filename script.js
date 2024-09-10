@@ -15,7 +15,7 @@ async function getPosts() {
     }
 
     const files = await response.json();
-    console.log(files); // Adicione isso para verificar o conteúdo da resposta
+    console.log('Files:', files); // Verifique o conteúdo da resposta
     const postsDiv = document.getElementById('posts');
     postsDiv.innerHTML = ''; // Limpa antes de carregar os posts
 
