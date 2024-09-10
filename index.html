@@ -35,6 +35,7 @@
           content,
           timestamp: new Date()
         });
+        console.log("Message posted successfully");
       } catch (e) {
         console.error("Error adding document: ", e);
       }
@@ -45,14 +46,18 @@
       const postsContainer = document.getElementById('posts');
       const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
       onSnapshot(q, (querySnapshot) => {
+        console.log('Snapshot received');
         postsContainer.innerHTML = '';
         querySnapshot.forEach((doc) => {
+          console.log('Document data:', doc.data());
           const post = doc.data();
           const postElement = document.createElement('div');
           postElement.className = 'post';
           postElement.textContent = post.content;
           postsContainer.appendChild(postElement);
         });
+      }, (error) => {
+        console.error("Error fetching documents: ", error);
       });
     }
 
@@ -64,6 +69,8 @@
         if (content) {
           await postMessage(content);
           document.getElementById('postContent').value = '';
+        } else {
+          console.warn('Post content is empty');
         }
       });
 
